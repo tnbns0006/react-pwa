@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any,@typescript-eslint/no-unused-vars */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { PrismaClient } from '@prisma/client';
 import webpush from 'web-push';
 
-const SUBS_FILE = path.resolve(process.cwd(), 'subscriptions.json');
+const prisma = new PrismaClient();
 
 // Lấy VAPID keys từ biến môi trường
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
@@ -22,14 +21,10 @@ export async function POST(req: NextRequest) {
     if (!senderId || !title || !message) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
-    let data: any[] = [];
-    try {
-      const file = await fs.readFile(SUBS_FILE, 'utf-8');
-      data = JSON.parse(file);
-    } catch (e) {
-      // file có thể chưa tồn tại
-    }
-    const targets = data.filter((item) => item.userId !== senderId);
+    // Lấy danh sách subscription từ DB, loại trừ sender
+    const targets = await prisma.subscription.findMany({
+      where: { NOT: { userId: senderId } },
+    });
     const payload = JSON.stringify({
       title: `Message from ${senderId}`,
       body: message,
@@ -38,7 +33,7 @@ export async function POST(req: NextRequest) {
     const results = [];
     for (const target of targets) {
       try {
-        await webpush.sendNotification(target.subscription, payload);
+        await webpush.sendNotification(target.data, payload);
         results.push({ userId: target.userId, success: true });
       } catch (err) {
         results.push({ userId: target.userId, success: false, error: String(err) });
