@@ -1,7 +1,7 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import webpush from 'web-push';
+import type { PushSubscription } from 'web-push';
 
 const prisma = new PrismaClient();
 
@@ -33,8 +33,13 @@ export async function POST(req: NextRequest) {
     const results = [];
     for (const target of targets) {
       try {
-        await webpush.sendNotification(target.data, payload);
-        results.push({ userId: target.userId, success: true });
+        const sub = target.data as PushSubscription;
+        if (sub && sub.endpoint) {
+          await webpush.sendNotification(sub, payload);
+          results.push({ userId: target.userId, success: true });
+        } else {
+          results.push({ userId: target.userId, success: false, error: 'Invalid subscription data' });
+        }
       } catch (err) {
         results.push({ userId: target.userId, success: false, error: String(err) });
       }
