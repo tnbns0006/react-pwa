@@ -66,11 +66,22 @@ export default function PushNotificationManager() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, endpoint: subscription.endpoint }),
     });
+    localStorage.removeItem("push_user_id");
+    setUserId("");
   }
 
   async function sendTestNotification() {
-    if (subscription) {
-      // TODO: Gửi request lên server để gửi notification
+    if (subscription && userId && message) {
+      // Gửi request lên server để gửi notification cho tất cả user khác
+      await fetch("/api/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderId: userId,
+          title: "TMS Maintenance",
+          message,
+        }),
+      });
       setMessage("");
     }
   }
@@ -82,7 +93,7 @@ export default function PushNotificationManager() {
   return (
     <div>
       <h3>Push Notifications</h3>
-      {!subscription && <div>
+      <div>
         <input
           type="text"
           placeholder="Enter your name"
@@ -92,10 +103,10 @@ export default function PushNotificationManager() {
             localStorage.setItem("push_user_id", e.target.value);
           }}
         />
-      </div>}
+      </div>
       {subscription ? (
         <>
-          <p>Hi {userId}! You are subscribed to push notifications.</p>
+          <p>Hi <strong>{userId}</strong>! You are subscribed to push notifications.</p>
           <button onClick={unsubscribeFromPush}>Unsubscribe</button>
           <input
             type="text"
