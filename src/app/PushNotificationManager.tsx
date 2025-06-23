@@ -91,9 +91,9 @@ export default function PushNotificationManager() {
   }
 
   return (
-    <div>
-      <h3>Push Notifications</h3>
-      <div>
+    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md border border-gray-200 flex flex-col gap-4">
+      <h3 className="text-xl font-bold text-center mb-2">Push Notifications</h3>
+      <div className="flex flex-col gap-2 mb-2">
         <input
           type="text"
           placeholder="Enter your name"
@@ -102,24 +102,45 @@ export default function PushNotificationManager() {
             setUserId(e.target.value);
             localStorage.setItem("push_user_id", e.target.value);
           }}
+          className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
       {subscription ? (
         <>
-          <p>Hi <strong>{userId}</strong>! You are subscribed to push notifications.</p>
-          <button onClick={unsubscribeFromPush}>Unsubscribe</button>
-          <input
-            type="text"
-            placeholder="Enter notification message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <button onClick={sendTestNotification}>Send Test</button>
+          <p className="text-green-700 text-center">Hi <strong>{userId}</strong>! You are subscribed to push notifications.</p>
+          <div className="flex flex-col gap-2 mt-2">
+            <button
+              onClick={unsubscribeFromPush}
+              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded transition"
+            >
+              Unsubscribe
+            </button>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter notification message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                onClick={sendTestNotification}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded transition"
+              >
+                Send Test
+              </button>
+            </div>
+          </div>
         </>
       ) : (
         <>
-          <p>You are not subscribed to push notifications.</p>
-          <button onClick={subscribeToPush}>Subscribe</button>
+          <p className="text-gray-700 text-center">You are not subscribed to push notifications.</p>
+          <button
+            onClick={subscribeToPush}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded transition w-full"
+          >
+            Subscribe
+          </button>
         </>
       )}
     </div>
