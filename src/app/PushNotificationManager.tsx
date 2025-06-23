@@ -16,12 +16,16 @@ export default function PushNotificationManager() {
   const [isSupported, setIsSupported] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [message, setMessage] = useState("");
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsSupported(true);
       registerServiceWorker();
     }
+    // Lấy userId từ localStorage nếu có
+    const savedUserId = localStorage.getItem("push_user_id");
+    if (savedUserId) setUserId(savedUserId);
   }, []);
 
   async function registerServiceWorker() {
@@ -34,19 +38,34 @@ export default function PushNotificationManager() {
   }
 
   async function subscribeToPush() {
+    if (!userId) {
+      alert("Please enter your User ID");
+      return;
+    }
     const registration = await navigator.serviceWorker.ready;
     const sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
     });
     setSubscription(sub);
-    // TODO: Gửi sub lên server để lưu lại
+    // Gửi sub và userId lên server để lưu lại
+    await fetch("/api/save-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription: sub, userId }),
+    });
   }
 
   async function unsubscribeFromPush() {
-    await subscription?.unsubscribe();
+     if (!subscription || !userId) return;
+    await subscription.unsubscribe();
     setSubscription(null);
-    // TODO: Gửi request lên server để xóa sub
+    // Gửi request lên server để xóa sub
+    await fetch("/api/save-subscription", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, endpoint: subscription.endpoint }),
+    });
   }
 
   async function sendTestNotification() {
@@ -63,10 +82,20 @@ export default function PushNotificationManager() {
   return (
     <div>
       <h3>Push Notifications</h3>
-      <label>{JSON.stringify(subscription)}</label>
+      {!subscription && <div>
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={userId}
+          onChange={(e) => {
+            setUserId(e.target.value);
+            localStorage.setItem("push_user_id", e.target.value);
+          }}
+        />
+      </div>}
       {subscription ? (
         <>
-          <p>You are subscribed to push notifications.</p>
+          <p>Hi {userId}! You are subscribed to push notifications.</p>
           <button onClick={unsubscribeFromPush}>Unsubscribe</button>
           <input
             type="text"
