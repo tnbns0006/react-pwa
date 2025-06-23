@@ -33,8 +33,9 @@ export async function POST(req: NextRequest) {
     const results = [];
     for (const target of targets) {
       try {
-        const sub = target.data as PushSubscription;
-        if (sub && sub.endpoint) {
+        // Ép kiểu qua unknown trước, sau đó sang PushSubscription
+        const sub = target.data as unknown as PushSubscription;
+        if (sub && typeof sub === 'object' && 'endpoint' in sub) {
           await webpush.sendNotification(sub, payload);
           results.push({ userId: target.userId, success: true });
         } else {
